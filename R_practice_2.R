@@ -78,3 +78,20 @@ ls_data[[5]]
 
 ls_data[[5]][[1]]
 ls_data[[1]][[2]]
+
+
+
+
+### 5. ¿¬»ê
+Amount <- 121
+dis_rate <- 0.10
+time <- 2
+
+Net_PV <- Amount / (1 + dis_rate)^time
+
+cost_benfit_profile <- c(-150, 135, 140)
+time_profile <- c(0,1,2)
+
+cost_benefit_PV_profile <- cost_benfit_profile / (1 + dis_rate)^time_profile
+Net_PV <- sum(cost_benefit_PV_profile)
+round(Net_PV)
