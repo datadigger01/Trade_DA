@@ -2,6 +2,7 @@
 
 ### 1. 벡터(Vector)
 price <- c(10, 13, 15)
+typeof(price)
 
 price[1]
 price[2:3]
@@ -23,6 +24,11 @@ var <- c("price","quantity","total")
 var[1]
 var[2:3]
 length(var)
+typeof(var)
+
+var1 <- factor(var)
+var1
+typeof(var1)
 
 ######## 주요 Tip ########## 
 # Cntrl + L : console 창에 있는 내용 한꺼번에 지우기
