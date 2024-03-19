@@ -1,23 +1,24 @@
 
 
 ##### Datawrangling with tidyverse #########
-# www.tidyverse.org 사이트 참고
+# www.tidyverse.org
 
 
 # 1. install 
-install.packages("tidyverse")     # Tool 메뉴에 install package를 이용해도됨
-library(tidyverse)                # file/plots/package etc 창에서 package에서 선택해도 활성됨
+install.packages("tidyverse")     # also install this package install package in tool bar menu
+library(tidyverse)                # check the selection bar in file/plots/package etc  package
 
 
 # data import 
 # getwd(), setwd()
-# 엑셀인 경우, tidyverse 에서 불러오기 예시 
-## --> df1 <- readxl::read_excel("./Life_Exp_by_Country.xlsx")  ::은 library()로 로드되지 않지만 패기지에 포함된 함수 사용법
+# in the case of excel file, refer to the below code.
+## df1 <- readxl::read_excel("./Life_Exp_by_Country.xlsx")  
+## :: -> use this character, when you want to use in not active package 
 
 df <- read.csv("./wdi_data.csv")
 
-# 1. 기본 탐색 
-# %>% : tidyverse에서 사용하는 파이프(pipe), control+shift+M(windows), cmd+shift+M(macOS)
+# 1. Basic data exploration
+# %>% :  pipe in tidyvesre, short key : control+shift+M(windows), cmd+shift+M(macOS)
 df %>% head(n=3)
 df %>% tail(n=3)
 df %>% names()
@@ -29,7 +30,7 @@ df %>% drop_na()
 unique(df$iso3c)
 unique(df$region)
 
-# 2. 행(row) 제어
+# 2. row(record) control
 # filter
 df %>% filter(iso3c=="KOR")
 df %>% filter(iso3c=="KOR"|iso3c=="JPN"|iso3c=="CHN") %>% view()
@@ -54,7 +55,7 @@ df %>% distinct(country, iso2c, iso3c, region) %>%
         filter(!region %in% c("","Aggregates")) %>% view()
 
 
-# 3. 열(column) 제어
+# 3. column control
 # select
 names(df)
 df %>% select(country, iso2c, iso3c, year) %>% view()
