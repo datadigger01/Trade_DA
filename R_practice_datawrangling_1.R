@@ -15,6 +15,7 @@ library(tidyverse)                # check the selection bar in file/plots/packag
 ## df1 <- readxl::read_excel("./Life_Exp_by_Country.xlsx")  
 ## :: -> use this character, when you want to use in not active package 
 
+setwd("D:/성균관대학교/강의/2024/데이터분석/실습데이터/Data")
 df <- read.csv("./wdi_data.csv")
 
 # 1. Basic data exploration
@@ -117,9 +118,34 @@ df %>% filter(!region %in% c("","Aggregates") & year==2020) %>%
 
 # ETC
 # unique(df$year)
-df %>% filter(!region %in% c("","Aggregates") & year >= 2020) %>%
+# extract three countries by region showing the lowest GDP growth rate in 2020(covid19 outbreak)
+df %>% filter(!region %in% c("","Aggregates") & year == 2020) %>%
   group_by(region, country) %>%
   summarise(n=n(),
-            TRADE_R=mean(GDP_GROWTH_RATE, na.rm=T)) %>% 
-  slice_max(TRADE_R, n=3) %>% print(n=30)
+            TRADE_R=mean(GDP_GROWTH_RATE, na.rm=T)) %>%
+  slice_min(TRADE_R, n=3) %>% print(n=30)
 
+
+
+unique(df$region)
+## t-test
+## verification the difference of gdp growth rate between two region using t-test
+df %>% filter(region %in% c("Latin America & Caribbean","Europe & Central Asia") & year == 2020) %>%
+  select(country, iso3c, region, GDP_GROWTH_RATE) %>% 
+  drop_na(GDP_GROWTH_RATE) -> ttest_df
+
+t.test(ttest_df$GDP_GROWTH_RATE ~ ttest_df$region)
+# t_test_result <- t.test(ttest_df$GDP_GROWTH_RATE ~ ttest_df$region)
+# t_test_result$method
+
+# t-test using %>% operation 
+# df %>% filter(region %in% c("Latin America & Caribbean","Europe & Central Asia") & year == 2020) %>%
+#   select(country, iso3c, region, GDP_GROWTH_RATE) %>% 
+#   drop_na(GDP_GROWTH_RATE) %>% t.test(GDP_GROWTH_RATE ~ region, data=.)
+
+
+ggplot(data = ttest_df,aes(x=GDP_GROWTH_RATE,fill=region)) + 
+  geom_density(alpha=0.8) +
+  # geom_vline(xintercept = -4.486581, color='red') +
+  # geom_vline(xintercept = -9.304592, color='blue') +
+  theme_bw()
