@@ -88,6 +88,17 @@ df4 %>% filter(iso3c %in% c("CHN","KOR","JPN")) %>%
           coord_flip() +
           theme_bw()
 
+#################################
+# density(geom_density) in ggplot
+#################################
+df4 %>% filter(iso3c %in% c("CHN","KOR","JPN") & year >= 2000) %>% 
+  drop_na(ratio_MA_exp) %>% 
+  ggplot(aes(x=ratio_MA_exp, color=country)) +
+  geom_density(linewidth=1) +
+  theme_bw()
+
+
+
 
 #######################################
 # scatter plot(geom_point) in ggplot
