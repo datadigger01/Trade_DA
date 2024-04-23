@@ -100,19 +100,25 @@ lm_df %>% ggplot(data =., aes(x=GDP_growth_rate, y=log(TO_export))) +
 # linear relationship between gdp_growth_rate and log(to_export) in Asia area
 ############################################################################
 unique(final_df$region)
-lm2_df <- final_df %>% filter(year == 2022 & 
-                               GDP_growth_rate > -10 & GDP_growth_rate < 10 &
-                               region %in% c("Europe"))
+final_df %>% filter(year == 2022 & 
+                    GDP_growth_rate > -10 & GDP_growth_rate < 10 &
+                    region %in% c("Europe")) %>% 
+              lm(data=., log(TO_export) ~ GDP_growth_rate + Inflation_rate) %>% 
+              summary()
+
 # linear regression 1
-lm2_model <- lm(log(TO_export) ~ GDP_growth_rate + Inflation_rate, data=lm2_df)
-summary(lm2_model)
+# lm2_model <- lm(log(TO_export) ~ GDP_growth_rate + Inflation_rate, data=lm2_df)
+# summary(lm2_model)
 
 
-lm2_df %>% ggplot(data =., aes(x=GDP_growth_rate, y=log(TO_export))) +
-  geom_point() +
-  geom_smooth(method =lm, se=F) +
-  # geom_abline(intercept = 4.650452, slope = 0.0286551) +
-  theme_bw()
+final_df %>% filter(year == 2022 & 
+                      GDP_growth_rate > -10 & GDP_growth_rate < 10 &
+                      region %in% c("Europe")) %>%
+              ggplot(data =., aes(x=GDP_growth_rate, y=log(TO_export))) +
+              geom_point() +
+              # geom_smooth(method =lm, se=T) +
+              geom_abline(intercept = 4.650452, slope = 0.039733) +
+              theme_bw()
 
 
 # linear regression 2
@@ -121,6 +127,7 @@ lm_df_lag <- final_df %>% arrange(country, year) %>%
                                  GDP_gr_rate_pre = lag(GDP_growth_rate),  # the very previous gdp growth rate
                                  Inflation_rate_pre = lag(Inflation_rate), # the very previous inflation rate
                                  country_pre = lag(country)) %>%          # flag that the previous value has the same country name 
+                                 relocate(TO_export_pre, .after = TO_export) %>% 
                                  relocate(GDP_gr_rate_pre, .after = GDP_growth_rate) %>%
                                  relocate(country_pre, .after = country)
 
@@ -142,7 +149,7 @@ lm_df_lag %>% filter(country == country_pre &
                      ) %>%
               ggplot(aes(x=log(TO_export_pre), y=log(TO_export))) +
               geom_point() +
-              # geom_abline(intercept = 2.188213, slope = 0.597745, color='blue') +
+              # geom_abline(intercept = 0.5450511, slope = 0.9068087, color='blue') +
               # labs(x="the previous year's export index", y="export index of the year") +
               theme_classic()
 
