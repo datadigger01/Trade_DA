@@ -1,0 +1,47 @@
+# 필요한 라이브러리 로드
+library(readr)
+library(dplyr)
+library(tidyr)
+
+# 데이터 파일 읽기
+trade_df_lm <- read_csv("path/to/trade_df_lm.csv")
+pop_df <- read_csv("path/to/API_SP.POP.TOTL_DS2.csv", skip = 4)
+gdp_df <- read_csv("path/to/API_NY.GDP.PCAP.KD_DS2.csv", skip = 4)
+
+# pop_df 컬럼명 정리
+colnames(pop_df) <- make.names(colnames(pop_df))
+pop_df <- pop_df %>%
+  rename(
+    iso3c = Country.Code,
+    Country = Country.Name,
+    Indicator = Indicator.Name
+  )
+
+# pop_df를 long format으로 변환
+pop_df_long <- pop_df %>%
+  pivot_longer(cols = starts_with("X"), names_to = "year", values_to = "population") %>%
+  mutate(year = as.integer(gsub("X", "", year)))
+
+# gdp_df 컬럼명 정리 및 불필요한 컬럼 제거
+colnames(gdp_df) <- make.names(colnames(gdp_df))
+gdp_df <- gdp_df %>%
+  select(-starts_with("Unnamed"))
+
+# gdp_df를 long format으로 변환
+gdp_df_long <- gdp_df %>%
+  pivot_longer(cols = starts_with("X"), names_to = "year", values_to = "gdp_per_capita") %>%
+  mutate(year = as.integer(gsub("X", "", year)))
+
+# trade_df_lm와 pop_df_long 병합
+trade_pop_merged <- trade_df_lm %>%
+  left_join(pop_df_long %>% select(iso3c, year, population), by = c("iso3c", "year"))
+
+# 최종 데이터프레임 생성 (GDP 데이터 병합)
+final_merged_df <- trade_pop_merged %>%
+  left_join(gdp_df_long %>% select(iso3c, year, gdp_per_capita), by = c("iso3c", "year"))
+
+# 결과를 CSV 파일로 저장
+write_csv(final_merged_df, "path/to/final_merged_dataset.csv")
+
+# 최종 데이터프레임 확인
+head(final_merged_df)
