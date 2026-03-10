@@ -1,6 +1,6 @@
 
 
-# º¯¼ö¿¡ ¼ýÀÚ ´ëÀÔ
+# ë³€ìˆ˜ì— ìˆ«ìž ëŒ€ìž…
 a <- 5
 typeof(a)
 #a1 = 10
@@ -23,5 +23,6 @@ typeof(a1)
 
 a2 <- as.double(a1)
 typeof(a2)
+
 
 c1 <- as.factor(c)
