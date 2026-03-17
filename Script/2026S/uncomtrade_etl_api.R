@@ -7,7 +7,7 @@ install.packages("comtradr")
 library("comtradr")
 
 # set primary comtrade key
-set_primary_comtrade_key("41f20f9a364a4ded8849fbf33f98b01f")
+set_primary_comtrade_key("#########################")
 
 
 # country code
