@@ -47,13 +47,13 @@ merged_data <- merged_data %>%
   left_join(wdi_gdpgrowth, by = c("iso_2" = "iso2c", "year" = "year")) %>%
   select(iso_2, iso_3, name, region, sub_region, year, export_ratio, import_ratio, gdp_growth = NY.GDP.MKTP.KD.ZG)
 
-
 unique(merged_data$region)
 merged_data %>% filter(year==2020, region %in% c('Asia','Americas')) %>% 
                 group_by(region) %>%  
                 summarise(avg_gdpgrowth = mean(gdp_growth, na.rm = TRUE), .groups = "drop")
 # distribution by region or sub_region  
 merged_data %>% filter(year==2020, region %in% c('Asia','Americas')) %>% 
+            # filter(!iso_3 %in% c('PSE','TLS','GUY','VEN')) %>%
             select(iso_3, name, region, sub_region,year, gdp_growth) %>% drop_na(gdp_growth) %>% 
             ggplot(data=., aes(gdp_growth, fill = region)) +
             geom_density(alpha=0.5) +
