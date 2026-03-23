@@ -181,21 +181,6 @@ merged_df <- merged_df %>%
                                 )
         ) 
 
-# ============================================
-# 전치 (Transpose) - Wide format으로 변환
-# ============================================
-# transposed_df <- merged_df %>%
-#   select(statCd, statCdCntnKor1, name, region, sub_region,year, ratio_expWgt_2020b) %>%
-#   pivot_wider(
-#     id_cols = c(statCd, statCdCntnKor1, name, region, sub_region),
-#     names_from = year,
-#     values_from = ratio_expWgt_2020b
-#   )
-# # 결측값 제거
-# transposed_df <- transposed_df %>% drop_na()
-# str(transposed_df)
-
-
 # =================================================
 # 선그래프 시각화 - 전체대상 2020기준 수출량 비율 추이
 # ================================================
