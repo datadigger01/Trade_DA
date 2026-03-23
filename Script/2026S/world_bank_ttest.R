@@ -1,7 +1,7 @@
 #install.packages("WDI")
 library(WDI)
 library(tidyverse)
-
+library(ggplot2)
 
 # WDIsearch() 함수는 WDI 데이터베이스에서 특정 키워드와 일치하는 지표를 검색하는 데 사용됩니다.
 # string: 검색할 키워드입니다. 예를 들어, "export" 또는 "import"와 같은 단어를 입력할 수 있습니다.
@@ -9,12 +9,13 @@ library(tidyverse)
 
 # export
 wdi_trade <- WDIsearch(string = "export", field = "name", short = FALSE ,cache = NULL)
-wdi_export <- WDI(country = "all", indicator = 'TX.VAL.MRCH.XD.WD', start = 2010, end = 2025)  #	TX.VAL.MRCH.XD.WD:Export value index (2015 = 100)
+wdi_export <- WDI(country = "all", indicator = 'NE.EXP.GNFS.ZS', start = 2010, end = 2025)  #	NE.EXP.GNFS.ZS: Exports of goods and services (% of GDP)
 #write_csv(wdi_export, "D:/wdi_export.csv")
 
 # import
 wdi_trade <- WDIsearch(string = "import", field = "name", short = FALSE ,cache = NULL)
-wdi_import <- WDI(country = "all", indicator = 'TM.VAL.MRCH.XD.WD', start = 2010, end = 2025)  #	TM.VAL.MRCH.XD.WD:Import value index (2015 = 100)
+wdi_import <- WDI(country = "all", indicator = 'NE.IMP.GNFS.ZS', start = 2010, end = 2025)  #	NE.IMP.GNFS.ZS:Imports of goods and services (% of GDP)
+
 # GDP growth
 wdi_gdp <- WDIsearch(string = "gdp growth", field = "name", short = FALSE ,cache = NULL)
 wdi_gdpgrowth <- WDI(country = "all", indicator = 'NY.GDP.MKTP.KD.ZG', start = 2010, end = 2025)  # NV.AGR.TOTL.ZG:GDP growth (annual %)
@@ -32,7 +33,7 @@ str(country_info)
 
 merged_data <- country_info %>%
   left_join(wdi_export, by = c("iso_2" = "iso2c")) %>%
-  select(iso_2, iso_3, name, region, sub_region, year, export_value_index = TX.VAL.MRCH.XD.WD)
+  select(iso_2, iso_3, name, region, sub_region, year, export_ratio = NE.EXP.GNFS.ZS)
 
 str(merged_data)
 # merged_data <- merge(merged_data, wdi_import, by.x = c("iso_2","year"), by.y= c("iso2c","year"), all.x = TRUE) %>% 
@@ -40,107 +41,77 @@ str(merged_data)
 #   rename(country=country.x, import_value_index = TM.VAL.MRCH.XD.WD)
 merged_data <- merged_data %>%
   left_join(wdi_import, by = c("iso_2" = "iso2c", "year" = "year")) %>%
-  select(iso_2, iso_3, name, region, sub_region, year, export_value_index, import_value_index = TM.VAL.MRCH.XD.WD)
+  select(iso_2, iso_3, name, region, sub_region, year, export_ratio, import_ratio = NE.IMP.GNFS.ZS)
 
 merged_data <- merged_data %>%
   left_join(wdi_gdpgrowth, by = c("iso_2" = "iso2c", "year" = "year")) %>%
-  select(iso_2, iso_3, name, region, sub_region, year, export_value_index, import_value_index, gdp_growth = NY.GDP.MKTP.KD.ZG)
+  select(iso_2, iso_3, name, region, sub_region, year, export_ratio, import_ratio, gdp_growth = NY.GDP.MKTP.KD.ZG)
 
 
-str(merged_data)
+unique(merged_data$region)
+merged_data %>% filter(year==2020, region %in% c('Asia','Americas')) %>% 
+                group_by(region) %>%  
+                summarise(avg_gdpgrowth = mean(gdp_growth, na.rm = TRUE), .groups = "drop")
+# distribution by region or sub_region  
+merged_data %>% filter(year==2020, region %in% c('Asia','Americas')) %>% 
+            select(iso_3, name, region, sub_region,year, gdp_growth) %>% drop_na(gdp_growth) %>% 
+            ggplot(data=., aes(gdp_growth, fill = region)) +
+            geom_density(alpha=0.5) +
+            # geom_vline(xintercept =-4.55, color='red') +
+            # geom_vline(xintercept =-9.55, color='blue') +
+            theme_bw()
 
 
-# create line graph of export_value_index by country with merged_data
-library(ggplot2)
-
-#### select several countries in the merged_data and draw the line graph with ggplot2
-
-unique(merged_data$sub_region)
-target_countries <- c("Eastern Asia")
-target_data <- merged_data %>% filter(sub_region %in% target_countries) %>% 
-  filter(!name %in% c("Korea, Democratic People's Republic of","Macao","Mongolia"))
-unique(target_data$name)
-
-# unique(merged_data$sub_region)
-# target_countries <- c("South-eastern Asia")
-# target_data <- merged_data %>% filter(sub_region %in% target_countries) %>% 
-#                                 filter(!name %in% c('Brunei Darussalam','Timor-Leste'))
-# unique(target_data$name)
-
-unique(merged_data$sub_region)
-target_countries <- c("Western Europe")
-target_data <- merged_data %>% filter(sub_region %in% target_countries) %>%
-  filter(!name %in% c('Liechtenstein'))
-unique(target_data$name)
-
-
-###### line graph of export_value_index by country with target_data
-ggplot(target_data, aes(x = year, y = export_value_index, color = name)) +
-  geom_line(linewidth = 1.2) +
-  # scale_color_manual(values = c("Korea, Republic of" = "black", "China" = "red", "Japan" = "blue")) +
-  labs(title = "Export by Country", x = "Year", y = "Export Value Index") +
-  theme_minimal() +
-  theme(legend.position = "bottom")
-
-ggplot(target_data, aes(x = year, y = gdp_growth, color = name)) +
-  geom_line(linewidth = 1.2) +
-  # scale_color_manual(values = c("Korea, Republic of" = "black", "China" = "red", "Japan" = "blue")) +
-  labs(title = "GDP growth by Country", x = "Year", y = "GDP growth") +
-  theme_minimal() +
-  theme(legend.position = "bottom")
-
-
-##### Boxplot of export_value_index by sub_region with merged_data
-# write_csv(merged_data, "D:/merged_data.csv")
-unique(merged_data$sub_region)
-target_data <- merged_data %>%
-  filter(sub_region == "South-eastern Asia", year %in% c(2019, 2024)) %>%
-  mutate(year = as.factor(year))
-
-# GDP Growth Boxplot
-ggplot(target_data, aes(x = year, y = gdp_growth, fill = year)) +
-  geom_boxplot(linewidth = 0.7, outlier.shape = 21, outlier.size = 2) +
-  scale_fill_manual(values = c("2019" = "#457B9D", "2024" = "#E63946")) +
-  labs(
-    title = "GDP Growth(2019 vs 2024)",
-    x = "Year",
-    y = "GDP Growth (%)"
-  ) +
-  theme_minimal() +
-  theme(legend.position = "none")
-
-
-
-### t-test for GDP growth between 2019 and 2024 in South-eastern Asia
-# filter data for South-eastern Asia and years 2019 and 2024
+###################################################################################
+### Independent sample t-test for GDP growth rate between Asia and Americas in 2020
+###################################################################################
 t_test_data <- merged_data %>%
-                filter(sub_region %in% c("South-eastern Asia","Latin America and the Caribbean"), year==2020) %>%
-                select(name, iso_3, sub_region, year, gdp_growth) %>% drop_na(gdp_growth)
+  filter(region %in% c("Asia","Americas"), year==2020) %>%
+  select(name, iso_3, region, year, gdp_growth) %>% drop_na(gdp_growth)
 
-# perform t-test
-t.test(gdp_growth ~ sub_region, data = t_test_data)
-# t_test_result <- t.test(gdp_growth ~ sub_region, data = t_test_data)
+# perform independent sample t-test
+t.test(gdp_growth ~ region, data = t_test_data)
+
+# t_test_result <- t.test(gdp_growth ~ region, data = t_test_data)
 # t_test_result$statistic
 
-# another way of performing t-test
-merged_data %>%
-  filter(sub_region %in% c("South-eastern Asia","Latin America and the Caribbean"), year==2020) %>%
-  select(name, iso_3, sub_region, year, gdp_growth) %>% drop_na(gdp_growth) %>% 
-  t.test(gdp_growth ~ sub_region, data = .)
+##############################################################################################
+## Paired sample t-test for GDP growth rate between Asia and Americas before COVID/after COVID
+##############################################################################################
+unique(merged_data$region)
+merged_data %>% filter(year %in% c(2019,2024), region %in% c('Asia')) %>% 
+  # filter(!iso_3 %in% c('PSE','TLS')) %>%
+  select(name, iso_3, region, sub_region, year, gdp_growth) %>% drop_na(gdp_growth) %>% 
+  ggplot(data=., aes(gdp_growth, fill = as.factor(year))) +
+  geom_density(alpha=0.7) +
+  # geom_vline(xintercept =1.77, color='red') +
+  # geom_vline(xintercept =2.58, color='blue') +
+  theme_bw()
+
+# # calculate mean of gdp_growth rate
+# merged_data %>% filter(year %in% c(2019, 2024), region %in% c("Americas"))  %>% 
+#   filter(!iso_3 %in% c('GUY','VEN')) %>% 
+#   select(name, iso_3, region, sub_region, year, gdp_growth) %>% drop_na(gdp_growth) %>%
+#   group_by(year) %>%
+#   summarise(avg_gdpgrowth = mean(gdp_growth, na.rm = TRUE), .groups = "drop")
 
 
-# paired t-test for GDP growth between 2019 and 2024 in South-eastern Asia
-# filter data for South-eastern Asia and years 2019 and 2024
+# paired t-test for GDP growth between 2019 and 2024
 paired_t_test_data <- merged_data %>%
-  filter(sub_region == "South-eastern Asia", year %in% c(2019, 2024)) %>%
-  select(name, iso_3, sub_region, year, gdp_growth) %>% drop_na(gdp_growth) %>%
-  pivot_wider(names_from = year, values_from = gdp_growth, names_prefix = "gdp_growth_")
+  filter(region %in% c("Asia"), year %in% c(2019, 2024)) %>% 
+  # filter(!iso_3 %in% c('PSE','VEN')) %>%
+  select(name, iso_3, region, sub_region, year, gdp_growth) %>% 
+  pivot_wider(id_cols = c(name,iso_3,region), names_from = year, values_from = gdp_growth, names_prefix = "gdp_growth_") %>% 
+  drop_na(gdp_growth_2019, gdp_growth_2024)
 # perform paired t-test
-t.test(paired_t_test_data$gdp_growth_2019, paired_t_test_data$gdp_growth_2024, paired = TRUE)
+t.test(paired_t_test_data$gdp_growth_2024, paired_t_test_data$gdp_growth_2019, paired = TRUE)
 
-# another way of performing paired t-test
+
+# Another way of performing paired t-test
 merged_data %>% 
-  filter(sub_region == "South-eastern Asia", year %in% c(2019, 2024)) %>%
-  select(name, iso_3, sub_region, year, gdp_growth) %>% drop_na(gdp_growth) %>%
-  pivot_wider(names_from = year, values_from = gdp_growth, names_prefix = "gdp_growth_") %>%
-  with(t.test(gdp_growth_2019,gdp_growth_2024, paired = TRUE, data = .))
+  filter(region == "Asia", year %in% c(2019, 2024)) %>%
+  # filter(!iso_3 %in% c('PSE','VEN')) %>%
+  select(name, iso_3, region, sub_region, year, gdp_growth) %>% drop_na(gdp_growth) %>%
+  pivot_wider(id_cols = c(name,iso_3,region), names_from = year, values_from = gdp_growth, names_prefix = "gdp_growth_") %>%
+  drop_na(gdp_growth_2019, gdp_growth_2024) %>%
+  with(t.test(gdp_growth_2024,gdp_growth_2019, paired = TRUE, data = .))
