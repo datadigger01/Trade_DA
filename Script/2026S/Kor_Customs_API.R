@@ -11,7 +11,7 @@ library(stringr)
 # ============================================
 # API ¼³Á¤
 # ============================================
-Servicekey <- "Ta+GkEF0ssmW1hDhEqXm5Xe2TWsM3pPycVRDIX9ejyt1GdQ/G8TkNhBRwJvnpHggECz6Kx5KBddps9oh9qjcPQ=="
+Servicekey <- "##############################"
 url <- "http://apis.data.go.kr/1220000/nitemtrade/getNitemtradeList"
 
 # ============================================
