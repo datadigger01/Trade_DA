@@ -9,15 +9,13 @@ library(ggplot2)
 
 # export
 wdi_trade <- WDIsearch(string = "export", field = "name", short = FALSE ,cache = NULL)
-wdi_export1 <- WDI(country = "all", indicator = 'NE.EXP.GNFS.ZS', start = 2010, end = 2025)  # NE.EXP.GNFS.ZS: Exports of goods and services (% of GDP)
+wdi_export1 <- WDI(country = "all", indicator = 'NE.EXP.GNFS.ZS', start = 2010, end = 2025)  # NE.EXP.GNFS.ZS:Exports of goods and services (% of GDP)
 wdi_export2 <- WDI(country = "all", indicator = 'TX.VAL.MRCH.XD.WD', start = 2010, end = 2025) # Export value index (2015 = 100)	
-
 
 # import
 wdi_trade <- WDIsearch(string = "import", field = "name", short = FALSE ,cache = NULL)
 wdi_import1 <- WDI(country = "all", indicator = 'NE.IMP.GNFS.ZS', start = 2010, end = 2025)  # NE.IMP.GNFS.ZS:Imports of goods and services (% of GDP)
 wdi_import2 <- WDI(country = "all", indicator = 'TM.VAL.MRCH.XD.WD', start = 2010, end = 2025)  # Import value index (2015 = 100)	
-
 
 # GDP growth
 wdi_gdp <- WDIsearch(string = "gdp growth", field = "name", short = FALSE ,cache = NULL)
