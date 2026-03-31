@@ -87,10 +87,10 @@ merged_data %>% filter(year >= 2020) %>%
 ## OLS regression
 reg_data <- merged_data %>% filter(year >= 2010) %>% drop_na(export_value, gdp_per_cap, cpi)
 reg_model <- lm(log(export_value) ~  log(lag(gdp_per_cap)) 
-                                      + log(lag(export_value,2))
+                                      # + log(lag(export_value,2))
                                       # + lag(cpi)
-                                      + lag(fdi_r_gdp)
-                                      + log(lag(pop_t))
+                                      # + lag(fdi_r_gdp)
+                                      # + log(lag(pop_t))
                                       , 
                                       data = reg_data)
 summary(reg_model)
