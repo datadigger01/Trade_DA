@@ -75,7 +75,7 @@ merged_data <- country_info %>%
          fdi_r_gdp, fdi_inflow
          )
 
-## Covid-19 pandemic shock and trade: scatter plot of export value and GDP value
+## create dummy variable for covid period (2020-2022) to check if there is any structural change in the relationship between export and GDP during the pandemic
 merged_data <- merged_data %>% 
                   mutate(covid_period = ifelse(date %in% c(2020,2021,2022), "Y", "N"))
 
