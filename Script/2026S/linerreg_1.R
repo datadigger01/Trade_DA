@@ -75,10 +75,16 @@ merged_data <- country_info %>%
          fdi_r_gdp, fdi_inflow
          )
 
-merged_data %>% filter(date >= 2020) %>% 
-  # filter(fdi_r_gdp >= -10 & fdi_r_gdp <= 10 ) %>%
-  drop_na(export_val, gdp_val) %>%
-  ggplot(mapping = aes(x=gdp_val,y=export_val)) +
+## Covid-19 pandemic shock and trade: scatter plot of export value and GDP value
+merged_data <- merged_data %>% 
+                  mutate(covid_period = ifelse(date %in% c(2020,2021,2022), "Y", "N"))
+
+
+merged_data1 %>% 
+  filter(date >= 2020) %>%
+  drop_na(export_val, gdp_val, gdp_lag) %>%
+  ggplot(mapping = aes(x=log(lag(gdp_val,1)),y=log(export_val))) +
+  # ggplot(mapping = aes(x=log(lag(gdp_val,1)),y=log(export_val),color=covid_period)) +
   geom_point() +
   # geom_smooth(method = "lm", se=F) +
   theme_classic()
@@ -86,13 +92,14 @@ merged_data %>% filter(date >= 2020) %>%
 
 ####### Pooled OLS regression with combined data ################
 reg_data <- merged_data %>%
-              filter(date >= 2020) %>%
+              filter(date >= 2015) %>%
               drop_na(export_val, gdp_per_cap, cpi, gdp_growth_r, fdi_inflow, pop_t)
 
 reg_model <- lm(log(export_val) ~ log(lag(gdp_val,1))
                 # + log(lag(gdp_per_cap,1))
                 # + log(lag(cpi,1))
                 # + log(lag(pop_t,1))
+                # + as.factor(covid_period)
                 , data = reg_data)
 
 summary(reg_model)
@@ -102,19 +109,19 @@ abline(h=0, col="red", lwd=2)
 
 
 
-
 #### Panel regression (within model) ##########
 ###############################################
 install.packages("plm")
 library("plm")
 reg_data <- merged_data %>%
-              filter(date >= 2010) %>%
+              filter(date >= 2015) %>%
               drop_na(export_val, gdp_per_cap, cpi, pop1564_r, gdp_val)
-plm_model <- plm(log(export_val) ~ log(lag(export_val,1))
+plm_model <- plm(log(export_val) ~ log(lag(gdp_val,1))
+                                    # + log(lag(export_val,1))
                                     # + log(lag(gdp_per_cap))
                                     # + log(lag(cpi))
-                                    # + log(lag(gdp_val))
-                                    # + lag(pop1564_r)
+                                    # + lag(pop1564_r,1)
+                                    # + as.factor(covid_period)
                  , data = reg_data, index=c("iso3c", "date"), model="within")
 
 summary(plm_model)
