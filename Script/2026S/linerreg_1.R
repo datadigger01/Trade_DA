@@ -1,22 +1,18 @@
 # installation un_comtrade / worldbank open api
-
 # install.packages("comtradr")
-# install.packages("WDI")
-library("WDI")
+
+# World Bank Open Data API : wbstats
+install.packages("wbstats")
+library("wbstats")
 library("comtradr")
 
 library("tidyverse")
 library("dplyr")
-library("ggplot2")
-# library("ggrepel")
+library("janitor")
 
 
 url <- "https://raw.githubusercontent.com/datadigger01/Trade_DA/main/Data/2026D/country_region.csv"
 country_info <- read_csv(url)
-
-####################### World Bank Indicators ###########################
-### Export
-
 
 ####################### World Bank Indicators ###########################
 wdi_trade <- wb_search(pattern = "export")
@@ -52,7 +48,7 @@ my_indicators <- c("export_growth_r" = "NE.EXP.GNFS.KD.ZG"
                    ,"export_r_gdp"   = "NE.EXP.GNFS.ZS"
                    ,"export_val"     = "NE.EXP.GNFS.KD"
                    ,"export_val_idx" = "TX.VAL.MRCH.XD.WD"
-                   ,"import_val"   = "NE.IMP.GNFS.KD"
+                   ,"import_val"     = "NE.IMP.GNFS.KD"
                    ,"import_r_gdp"   = "NE.IMP.GNFS.ZS"
                    ,"import_val_idx" = "TM.VAL.MRCH.XD.WD"
                    ,"gdp_val"        = "NY.GDP.MKTP.KD"
@@ -66,31 +62,69 @@ my_indicators <- c("export_growth_r" = "NE.EXP.GNFS.KD.ZG"
                   )
 wdi_data <- wb_data(my_indicators, country = "all", start_date = 2005, end_date = 2025)
 
-# create new variable: population ratio of 15-64 to total population
-merged_data <- merged_data %>%
-                mutate(pop1564_r = round(pop_1564/pop_t, 4) * 100)
+wdi_data <- wdi_data %>%
+    mutate(pop1564_r = round(pop_1564/pop_t, 4) * 100) # create new variable: population ratio of 15-64 to total population
 
-unique(merged_data$sub_region)
+str(wdi_data)
+merged_data <- country_info %>% 
+  inner_join(wdi_data, by=c("iso_3"="iso3c")) %>%
+  select(name, iso2c=iso_2, iso3c=iso_3, region, sub_region, date,
+         export_val, export_r_gdp, export_val_idx,
+         import_val, import_r_gdp, import_val_idx, 
+         gdp_val, gdp_growth_r, gdp_per_cap, cpi, pop_t, pop_1564, pop1564_r, 
+         fdi_r_gdp, fdi_inflow
+         )
+
 merged_data %>% filter(date >= 2020) %>% 
-                # filter(fdi_r_gdp >= -10 & fdi_r_gdp <= 10 ) %>%
-                drop_na(gdp_growth_r, export_r_gdp) %>% 
-                ggplot(mapping = aes(x=log(lag(gdp_per_cap,1)),y=log(export_val))) +
-                geom_point() +
-                # geom_smooth(method = "lm", se=F) +
-                theme_classic()
+  # filter(fdi_r_gdp >= -10 & fdi_r_gdp <= 10 ) %>%
+  drop_na(export_val, gdp_val) %>%
+  ggplot(mapping = aes(x=gdp_val,y=export_val)) +
+  geom_point() +
+  # geom_smooth(method = "lm", se=F) +
+  theme_classic()
 
 
-## OLS regression
-reg_data <- merged_data %>% filter(date >= 2010) %>% drop_na(export_val, gdp_per_cap, cpi, fdi_r_gdp, pop_t)
-reg_model <- lm(log(export_val) ~ log(lag(gdp_per_cap)) 
-                                      #  + log(lag(gdp_val))
-                                      # + lag(cpi)
-                                      # + lag(fdi_r_gdp)
-                                      # + log(lag(pop_t))
-                                      , 
-                                      data = reg_data)
+####### Pooled OLS regression with combined data ################
+reg_data <- merged_data %>%
+              filter(date >= 2020) %>%
+              drop_na(export_val, gdp_per_cap, cpi, gdp_growth_r, fdi_inflow, pop_t)
+
+reg_model <- lm(log(export_val) ~ log(lag(gdp_val,1))
+                # + log(lag(gdp_per_cap,1))
+                # + log(lag(cpi,1))
+                # + log(lag(pop_t,1))
+                , data = reg_data)
+
 summary(reg_model)
-# plot(reg_model,1)
 
-plot(reg_model$fitted.values, reg_model$residuals, pch=16, main="Residuals vs Fitted Values", xlab="Fitted Values", ylab="Residuals", ylim=c(-5,5))
+plot(reg_model$residuals, pch=16, col="black", main="Residuals of OLS Regression", xlab="Index", ylab="Residuals", ylim=c(-4,4))
 abline(h=0, col="red", lwd=2)
+
+
+
+
+#### Panel regression (within model) ##########
+###############################################
+install.packages("plm")
+library("plm")
+reg_data <- merged_data %>%
+              filter(date >= 2010) %>%
+              drop_na(export_val, gdp_per_cap, cpi, pop1564_r, gdp_val)
+plm_model <- plm(log(export_val) ~ log(lag(export_val,1))
+                                    # + log(lag(gdp_per_cap))
+                                    # + log(lag(cpi))
+                                    # + log(lag(gdp_val))
+                                    # + lag(pop1564_r)
+                 , data = reg_data, index=c("iso3c", "date"), model="within")
+
+summary(plm_model)
+
+resids <- as.numeric(resid(plm_model))
+fitted_vals <- as.numeric(predict(plm_model))
+# 3. scatter plot
+plot(resids,
+     xlab = "Fitted Values (y-hat)", 
+     ylab = "Residuals",
+     main = "Residuals vs Fitted (Within Model)",
+     pch = 16, col = "black", ylim=c(-4,4))
+abline(h = 0, col = "red", lwd = 2) # add baseline at y=0
