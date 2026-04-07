@@ -1,8 +1,8 @@
 # installation un_comtrade / worldbank open api
 
 # install.packages("comtradr")
-# install.packages("WDI")
-library("WDI")
+install.packages("wbstats")
+library("wbstats")
 library("comtradr")
 
 library("tidyverse")
