@@ -107,8 +107,8 @@ reg_data <- kor_export_asean %>%
 
 #reg_data <- reg_data %>%mutate(fta_status = relevel(as.factor(fta_status), ref = "Non-FTA"))
 reg_model <- lm(log(export_goods_val) ~ as.factor(fta_status)
-                                        + log(lag(gdp_val,1))
-                                        + log(lag(cpi,1))
-                                        + log(lag(pop_t,1))
+                                        # + log(lag(gdp_val,1))
+                                        # + log(lag(cpi,1))
+                                        # + log(lag(pop_t,1))
                                         , data = reg_data)
 summary(reg_model)
