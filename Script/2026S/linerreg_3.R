@@ -106,14 +106,29 @@ reg_data <- kor_export_asean %>%
                           drop_na(export_goods_val, gdp_val, cpi, fdi_inflow, pop_t)
 
 #reg_data <- reg_data %>%mutate(fta_status = relevel(as.factor(fta_status), ref = "Non-FTA"))
-reg_model <- lm(log(export_goods_val) ~ as.factor(fta_status)
-                                        # + log(lag(gdp_val,1))
-                                        # + log(lag(cpi,1))
-                                        # + log(lag(pop_t,1))
+reg_model1 <- lm(log(export_goods_val) ~ as.factor(fta_status), data = reg_data)
+reg_model2 <- lm(log(export_goods_val) ~ as.factor(fta_status)
+                                          + log(lag(gdp_val,1))
+                                          + log(lag(cpi,1))
+                                          + log(lag(pop_t,1))
                                         , data = reg_data)
-summary(reg_model)
-
+summary(reg_model1)
+summary(reg_model2)
 
 # residual plot to check the model fit and identify any potential outliers or patterns in the residuals
-plot(reg_model$residuals, pch=16, col="black", main="Residuals of OLS Regression", xlab="Index", ylab="Residuals", ylim=c(-4,4))
+plot(reg_model2$residuals, pch=16, col="black", main="Residuals of OLS Regression", xlab="Index", ylab="Residuals", ylim=c(-4,4))
 abline(h=0, col="red", lwd=2)
+
+
+
+# stargazer package to create a nice regression table for the two models
+install.packages("stargazer")
+library(stargazer)
+
+stargazer(reg_model, reg_model2, type = "text", title = "OLS Regression Results", 
+          dep.var.labels = c("Log of Export Value"), 
+          covariate.labels = c("FTA Status (Non-FTA as reference)", "Log of Lagged GDP Value", "Log of Lagged CPI", "Log of Lagged Population"),
+          omit.stat = c("f", "ser"), # omit F-statistic and standard error from the table
+          no.space = TRUE, # remove extra spaces in the table
+          align = TRUE, # align the columns
+          digits = 3) # round coefficients to 3 decimal places
