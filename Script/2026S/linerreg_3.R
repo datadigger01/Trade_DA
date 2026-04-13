@@ -112,3 +112,8 @@ reg_model <- lm(log(export_goods_val) ~ as.factor(fta_status)
                                         # + log(lag(pop_t,1))
                                         , data = reg_data)
 summary(reg_model)
+
+
+# residual plot to check the model fit and identify any potential outliers or patterns in the residuals
+plot(reg_model$residuals, pch=16, col="black", main="Residuals of OLS Regression", xlab="Index", ylab="Residuals", ylim=c(-4,4))
+abline(h=0, col="red", lwd=2)
