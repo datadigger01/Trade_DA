@@ -102,8 +102,6 @@ kor_trade_all <- kor_trade_all %>%
 
 
 
-
-
 unique(kor_trade_all$sub_region)
 # options(scipen = 999)
 kor_trade_all %>% 
@@ -116,6 +114,7 @@ kor_trade_all %>%
   geom_smooth(method = "lm", se=F) +
   theme_bw()
 
+reg_data <- kor_trade_all %>% filter(sub_region =="South-eastern Asia")
 ## OLS regression with lagged independent variables to check the relationship between export value and GDP value, controlling for other factors
 reg_model<- lm(log(export_goods_val) ~  log(lag(gdp_per_cap))
                # + log(lag(import_goods_val))
