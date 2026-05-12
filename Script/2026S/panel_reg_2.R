@@ -31,6 +31,7 @@ flowref <- 'IMF.STA,IMTS' # STA: International Financial Statistics (IFS), ITG: 
 
 # filter identifies the subset of the dataset you want.
 filter <- 'KOR.XG_FOB_USD..A' # XG: export of goods, FOB value, USD; A: annual data
+# .XG_FOB_USD.KOR.A
 
 fetch_imf_imts <- function(filter_key,
                            value_name,
@@ -57,7 +58,7 @@ fetch_imf_imts <- function(filter_key,
 # 2) 수출·수입 데이터 수집
 # ------------------------------------------------------------
 kor_export <- fetch_imf_imts("KOR.XG_FOB_USD..A", "export_goods_val")
-kor_import <- fetch_imf_imts(".XG_FOB_USD.KOR.A", "import_goods_val")
+kor_import <- fetch_imf_imts("KOR.MG_CIF_USD..A", "import_goods_val")
 
 # ------------------------------------------------------------
 # 3) 결합 (파트너 × 연도 기준)
@@ -65,8 +66,8 @@ kor_import <- fetch_imf_imts(".XG_FOB_USD.KOR.A", "import_goods_val")
 # ------------------------------------------------------------
 kor_trade_all <- kor_export %>%
   select(country, partner, year, export_goods_val) %>%
-  left_join(kor_import %>% select(country, year, import_goods_val),
-            by = c("partner" = "country", "year" = "year")) %>%
+  left_join(kor_import %>% select(country, partner, year, import_goods_val),
+            by = c('country'='country', "partner" = "partner", "year" = "year")) %>%
   mutate(import_goods_val = replace_na(import_goods_val, 1))  # 로그 변환 대비
                                 
 ############################################
@@ -121,17 +122,17 @@ kor_trade_all <- kor_trade_all %>%
 ###### visualization #############
 # unique(kor_trade_all$sub_region)
 # # options(scipen = 999)
-# kor_trade_all %>% 
-#   # filter(region =="Asia") %>%
-#   drop_na(fdi_abs, export_goods_val) %>% 
-#   ggplot(mapping = aes(x=log(cpi), y=log(export_goods_val)
-#                        # ,color=as.factor(year)
-#                        )
-#          ) +
-#   geom_point() +
-#   # facet_grid(~year) +
-#   geom_smooth(method = "lm", se=F) +
-#   theme_bw()
+kor_trade_all %>%
+  # filter(region =="Asia") %>%
+  drop_na(fdi_abs, export_goods_val) %>%
+  ggplot(mapping = aes(x=log(lag(import_goods_val)), y=log(export_goods_val)
+                       # ,color=as.factor(year)
+                       )
+         ) +
+  geom_point() +
+  # facet_grid(~year) +
+  geom_smooth(method = "lm", se=F) +
+  theme_bw()
 
 
 ###############################################################################
@@ -144,7 +145,7 @@ reg_data <- kor_trade_all %>%
   drop_na(export_goods_val, import_goods_val, gdp_per_cap, pop_t, fdi_abs, fdi_neg_dummy)
 reg_data <- pdata.frame(reg_data, index = c("partner","year"))  
   
-plm_model_within <- plm(log(export_goods_val) ~ gdp_growth_r
+plm_model_within <- plm(log(export_goods_val) ~ gdp_growth_r + lag(gdp_growth_r,1) + lag(gdp_growth_r,2) +
                                           + log(lag(export_goods_val,1))
                                           + log(lag(export_goods_val,2))
                                           + log(lag(import_goods_val,1))

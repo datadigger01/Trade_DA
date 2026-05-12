@@ -11,7 +11,7 @@ url <- "https://raw.githubusercontent.com/datadigger01/Trade_DA/main/Data/2026D/
 country_info <- read_csv(url)
 
 # IMF data
-flowref <- 'IMF.STA,IMTS' 
+flowref <- 'IMF.STA,IMTS'
 # filter <- 'KOR.XG_FOB_USD..A'
 
 fetch_imf_imts <- function(filter_key,
@@ -36,12 +36,12 @@ fetch_imf_imts <- function(filter_key,
 }
 
 kor_export <- fetch_imf_imts("KOR.XG_FOB_USD..A", "export_goods_val")
-kor_import <- fetch_imf_imts(".XG_FOB_USD.KOR.A", "import_goods_val")
+kor_import <- fetch_imf_imts("KOR.MG_CIF_USD..A", "import_goods_val")
 
 kor_trade_all <- kor_export %>%
   select(country, partner, year, export_goods_val) %>%
-  left_join(kor_import %>% select(country, year, import_goods_val),
-            by = c("partner" = "country", "year" = "year")) %>%
+  left_join(kor_import %>% select(country, partner, year, import_goods_val),
+            by = c('country'='country', "partner" = "partner", "year" = "year")) %>%
   mutate(import_goods_val = replace_na(import_goods_val, 1))  # 로그 변환 대비
 
 # World Bank data
@@ -110,7 +110,7 @@ plm_model <- plm(log(export_goods_val) ~  log(lag(gdp_per_cap,0:2))
                         + log(lag(import_goods_val,2))
                         + log(lag(fdi_abs,1)) * lag(fdi_neg_dummy,1)
                         # + log(lag(fdi_abs,2)) * lag(fdi_neg_dummy,2)
-                        + log(lag(cpi,0:1))
+                        + log(lag(cpi,0:2))
                         + log(pop_t)
                         # + as.factor(year)
                         , data = reg_data, index=c("partner", "year"), effect='twoways', model="within")
