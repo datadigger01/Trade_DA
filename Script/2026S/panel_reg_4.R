@@ -13,10 +13,9 @@ library(tidyr)
 url <- "https://raw.githubusercontent.com/datadigger01/Trade_DA/main/Data/2026D/country_region.csv"
 country_info <- read_csv(url)
 
-# IMF data
+# IMF database
 flowref <- 'IMF.STA,IMTS'
 # filter <- 'KOR.XG_FOB_USD..A'
-
 fetch_imf_imts <- function(filter_key,
                            value_name,
                            start   = 2000,
@@ -48,8 +47,8 @@ kor_trade_all <- kor_export %>%
             by = c('country'='country', "partner" = "partner", "year" = "year")) %>%
   mutate(import_goods_val = replace_na(import_goods_val, 1))  # replace NA or zero value with 1 for before applying log transformation
 
-# World Bank data
-wdi_indicator <- wb_search(pattern = "development")
+# World Bank database
+# wdi_indicator <- wb_search(pattern = "export")
 my_indicators <- c( "export_val_kr"   = "NE.EXP.GNFS.KN"
                     ,"export_val_usd" = "NE.EXP.GNFS.KD"
                     ,"import_val_kr"  = "NE.IMP.GNFS.KN"
@@ -64,6 +63,8 @@ my_indicators <- c( "export_val_kr"   = "NE.EXP.GNFS.KN"
                     ,"fdi_inflow"     = "BX.KLT.DINV.CD.WD"
 )
 wdi_data <- wb_data(my_indicators, country = "all", start_date = 2000, end_date = 2025)
+
+# FDI data trasfomation
 wdi_data <- wdi_data %>%
   mutate(
     # 1) Absolute magnitude of FDI :Add 1 to allow log transformation and handle zero values
@@ -74,7 +75,7 @@ wdi_data <- wdi_data %>%
 
 # merge the IMF export data with the target countries data
 kor_trade_all_1 <- kor_trade_all %>%
-  filter(country == "KOR") %>% 
+  # filter(country == "KOR") %>% 
   inner_join(country_info, by = c("partner" = "iso_3")) %>% 
   select(country, partner, name, region, sub_region, year, export_goods_val, import_goods_val)
 
@@ -99,7 +100,6 @@ library("lmtest")
 reg_data <- kor_trade_all_f %>% 
   # filter(sub_region=='Southern Asia') %>% 
   drop_na(export_goods_val, import_goods_val, gdp_per_cap, pop_t, fdi_abs, fdi_neg_dummy) %>% 
-  group_by(partner) %>%
   mutate(
         ln_export  = log(export_goods_val), # natural log transformation of export_goods_val
         ln_import  = log(import_goods_val), # natural log transformation of import_goods_val
@@ -107,22 +107,20 @@ reg_data <- kor_trade_all_f %>%
         ln_fdi_abs = log(fdi_abs),          # natural log transformation of fdi_abs
         ln_cpi     = log(cpi),              # natural log transformation of cpi
         ln_pop     = log(pop_t)             # natural log transformation of pop_t
-        ) %>%
-  ungroup()
+        )
 
 # panel data frame 
 reg_data_plm <- pdata.frame(reg_data, index = c("partner","year"))
 
 # reg_data <- reg_data %>%mutate(fdi_neg_dummy = relevel(as.factor(fdi_neg_dummy), ref = "0"))
 plm_model <- plm( ln_export ~  lag(ln_gdp_pc,0) + lag(ln_gdp_pc,1)
-                                # + lag(ln_export,1) + lag(ln_export,2)
                                + lag(ln_import,1) + lag(ln_import,2)
                                + lag(ln_cpi,0) + lag(ln_cpi,1) + lag(ln_cpi,2)
                                + lag(ln_fdi_abs,1) * lag(fdi_neg_dummy,1)
                                # + lag(ln_fdi_abs,2) * lag(fdi_neg_dummy,2)
                                + ln_pop
-                               + as.factor(year)
-                  ,data = reg_data_plm, index=c("partner", "year"), effect='individual', model="within")
+                               # + as.factor(year)
+                  ,data = reg_data_plm, index=c("partner", "year"), effect='twoways', model="within")
 # output summary
 summary(plm_model)
 
@@ -157,26 +155,26 @@ coeftest(lsdv_model, vcov = vcovHC(lsdv_model, type = "HC1", cluster = "group"))
 ##########################################################################
 # stargazer output
 ###########################################################################
-# library(sandwich)
-# library(stargazer)
-# # 2. Cluster robust variance-covariance matrix & coeftest
-# cl_vcov   <- vcovHC(lsdv_model, type = "HC1", cluster = "group")
-# cl_test   <- coeftest(lsdv_model, vcov = cl_vcov)
-# # 3. Cluster SE & p-value
-# cl_se <- cl_test[, "Std. Error"]
-# cl_p  <- cl_test[, "Pr(>|t|)"]
-# # 4. stargazer output
-# stargazer(
-#   lsdv_model,
-#   se   = list(cl_se),
-#   p    = list(cl_p),
-#   type = "text",                       # 콘솔 확인용. 논문용은 "latex", 워드용은 "html"
-#   title = "LSDV Estimation with Cluster-Robust SE (HC1, clustered by partner)",
-#   dep.var.labels = "ln(Export)",
-#   omit = c("partner", "year"),    # partner/year 더미는 표에서 숨김
-#   omit.labels = c("Partner FE", "Year FE"),
-#   omit.stat = c("f", "ser"),           # 필요 없으면 통계량 일부 제거
-#   digits = 4,
-#   notes  = "Cluster-robust standard errors (by partner) in parentheses.",
-#   notes.align = "l"
-# )
+library(sandwich)
+library(stargazer)
+# 2. Cluster robust variance-covariance matrix & coeftest
+cl_vcov   <- vcovHC(lsdv_model, type = "HC1", cluster = "group")
+cl_test   <- coeftest(lsdv_model, vcov = cl_vcov)
+# 3. Cluster SE & p-value
+cl_se <- cl_test[, "Std. Error"]
+cl_p  <- cl_test[, "Pr(>|t|)"]
+# 4. stargazer output
+stargazer(
+  lsdv_model,
+  se   = list(cl_se),
+  p    = list(cl_p),
+  type = "text",                       # 콘솔 확인용. 논문용은 "latex", 워드용은 "html"
+  title = "LSDV Estimation with Cluster-Robust SE (HC1, clustered by partner)",
+  dep.var.labels = "ln(Export)",
+  omit = c("partner", "year"),    # partner/year 더미는 표에서 숨김
+  omit.labels = c("Partner FE", "Year FE"),
+  omit.stat = c("f", "ser"),           # 필요 없으면 통계량 일부 제거
+  digits = 4,
+  notes  = "Cluster-robust standard errors (by partner) in parentheses.",
+  notes.align = "l"
+)
