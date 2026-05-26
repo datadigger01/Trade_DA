@@ -5,8 +5,15 @@
 
 # 1. package install
 # install.packages(c("tidyverse", "plm", "lmtest", "sandwich", "alpaca", "fixest"))
+if (!require("tidyverse")) { install.packages("tidyverse") }
+if (!require("plm")) { install.packages("plm") }
+if (!require("lmtest")) { install.packages("lmtest") }
+if (!require("sandwich")) { install.packages("sandwich") }
 library(tidyverse)
+library(plm)
 library(lmtest)
+library(sandwich)
+if (!require("fixest")) { install.packages("fixest") }
 library(fixest) # A widely used package for fixed effects and PPML estimation in modern empirical trade analysis
 
 # 주요 30개국 설정 (한국, 미국, 중국, 일본, 아세안 및 유럽 주요국 대리)
@@ -119,8 +126,11 @@ etable(fit_ols, fit_fe1, fit_fe2)
 
 
 # etable(fit_ols, fit_fe, order = "f", drop = "Int")
-# fit_did_ppml <- feglm(tradeflow_comtrade_o ~  distw_arithmetic |
-#                         pair_id + country_id_o^year + country_id_d^year,
+# fit_did_ppml <- feglm(digital_tradeflow ~  distw_arithmetic
+#                                            + fta_wto_raw
+#                                            + contig 
+#                                            + comlang_off
+#                                            | country_id_o^year + country_id_d^year,
 #                       data = gravity_multi_panel, family = "poisson", cluster = ~pair_id)
 # summary(fit_did_ppml)
 # etable(fit_did_ppml)

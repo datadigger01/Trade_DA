@@ -5,13 +5,19 @@
 
 # 1. package install
 # # install.packages(c("tidyverse", "plm", "lmtest", "sandwich", "alpaca"))
-# library(tidyverse)
-# library(plm)
-# library(lmtest)
-# library(sandwich)
+if (!require("tidyverse")) { install.packages("tidyverse") }
+if (!require("plm")) { install.packages("plm") }
+if (!require("lmtest")) { install.packages("lmtest") }
+if (!require("sandwich")) { install.packages("sandwich") }
+if (!require("modelsummary")) { install.packages("modelsummary") }
+library(tidyverse)
+library(plm)
+library(lmtest)
+library(sandwich)
+library(modelsummary)
 
 # A widely used package for fixed effects and PPML estimation in modern empirical trade analysis
-install.packages("fixest")
+if (!require("fixest")) { install.packages("fixest") }
 library(fixest)
 
 # 주요 30개국 설정 (한국, 미국, 중국, 일본, 아세안 및 유럽 주요국 대리)
@@ -26,10 +32,8 @@ countries <- c("KOR", "USA", "CHN", "JPN", "DEU", "FRA", "GBR", "VNM", "SGP", "I
 # CEPII dataset
 url1 <- "https://raw.githubusercontent.com/datadigger01/Trade_DA/main/Data/2026D/cepii_2021.csv"
 gravity_df <- read_csv(url1)
-
+# check the columns
 str(gravity_df)
-
-
 
 ################################################################
 # 2. Gravity Data merge with Export/import dataset 
@@ -71,7 +75,6 @@ fit_ols <- feols(ln_trade ~ ln_gdp_exp + ln_gdp_imp + ln_dist
                             + comlang_off
                           , data = gravity_multi_panel, cluster = ~pair_id)
 summary(fit_ols)
-
 #--- [Model 2] Exporter-Year & Importer-Year 고정효과 OLS (대형 패널 표준) : OLS with Exporter-Year and Importer-Year Fixed Effects
 # 다자간 저항을 완벽히 흡수하므로 시간 가변 독립변수(GDP 등)는 자동으로 다중공선성 제거(Drop)됨
 # 지리적 거리와 무역 비용 계수만 정밀하게 추정할 때 사용
@@ -98,9 +101,7 @@ summary(fit_fe2)
 
 # compare the result of fit_fe model and the fit_ols model
 etable(fit_ols, fit_fe1, fit_fe2)
-
-
-
+#modelsummary(list("PoolsedOLS" = fit_ols, "fixedEffect" = fit_fe1, "Pair" = fit_fe2))
 
 # etable(fit_ols, fit_fe, order = "f", drop = "Int")
 # fit_did_ppml <- feglm(tradeflow_comtrade_o ~  distw_arithmetic |
