@@ -260,22 +260,22 @@ plot_centrality_trend(centrality_panel, metric = "betweenness_w",top_n = 10)
 # ---- 7. (선택) Full vs Backbone 비교 ---------------------------------------
 # disparity filter 가 분석 결과에 미치는 영향을 정량 비교하려면:
 #
-# panel_full <- map_dfr(years, compute_centrality_year, alpha = 1.0)
-# panel_bb05 <- map_dfr(years, compute_centrality_year, alpha = 0.05)
-# panel_bb01 <- map_dfr(years, compute_centrality_year, alpha = 0.01)
+panel_full <- map_dfr(years, compute_centrality_year, alpha = 1.0)
+panel_bb05 <- map_dfr(years, compute_centrality_year, alpha = 0.05)
+panel_bb01 <- map_dfr(years, compute_centrality_year, alpha = 0.01)
 #
 # # 상위 10개국 교집합 (out_strength 평균 기준)
-# top10 <- function(p) p %>% group_by(country) %>%
-#   summarise(s = mean(out_strength, na.rm = TRUE)) %>%
-#   slice_max(s, n = 10) %>% pull(country)
-# 
-# intersect(top10(panel_full), top10(panel_bb05))
-# intersect(top10(panel_full), top10(panel_bb01))
-#
-# # 두 패널에서 한국의 PageRank 추이 비교
+top10 <- function(p) p %>% group_by(country) %>%
+  summarise(s = mean(out_strength, na.rm = TRUE)) %>%
+  slice_max(s, n = 10) %>% pull(country)
+
+intersect(top10(panel_full), top10(panel_bb05))
+intersect(top10(panel_full), top10(panel_bb01))
+
+# 두 패널에서 PageRank 추이 비교
 # bind_rows(
-#   panel_full %>% filter(country == "Republic of Korea") %>% mutate(view = "full"),
-#   panel_bb05 %>% filter(country == "Republic of Korea") %>% mutate(view = "backbone α=0.05")
+#   panel_full %>% filter(country == "Italy") %>% mutate(view = "full"),
+#   panel_bb01 %>% filter(country == "Italy") %>% mutate(view = "backbone α=0.05")
 # ) %>%
-#   ggplot(aes(year, pagerank_w, colour = view)) +
+#   ggplot(aes(year, out_strength, colour = view)) +
 #   geom_line() + geom_point() + theme_minimal()
